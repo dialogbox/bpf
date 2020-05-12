@@ -1,0 +1,29 @@
+FROM ubuntu:focal
+LABEL maintainer="Jason Kim <junchul@google.com>"
+
+RUN apt-get update -y && \
+  apt install -y wget bison build-essential bison flex \
+   libncurses-dev libssl-dev libelf-dev binutils-dev libreadline-dev && \
+  apt-get clean autoclean
+
+ARG BUILD_ID
+ENV BUILD_ID=$BUILD_ID
+
+RUN wget https://storage.googleapis.com/cos-tools/${BUILD_ID}/kernel-src.tar.gz -P /tmp/ && \
+  mkdir /tmp/kernel_src && tar -zxvf /tmp/kernel-src.tar.gz -C /tmp/kernel_src/ ./tools ./kernel
+
+RUN make -C /tmp/kernel_src/tools bpf_install
+
+FROM dialogbox/bpfbase:latest
+LABEL maintainer="Jason Kim <junchul@google.com>"
+
+RUN apt-get update -y && \
+  apt install -y binutils && \
+  apt-get clean autoclean && \
+  rm -rf /var/lib/apt/lists/*
+
+WORKDIR /root
+COPY --from=0 /usr/local/bin/bpf* /usr/local/bin/
+COPY --from=0 /usr/local/sbin/bpf* /usr/local/sbin/
+
+CMD ["/bin/bash"]

@@ -1,0 +1,9 @@
+FROM quay.io/iovisor/bpftrace:latest
+LABEL maintainer="Jason Kim <junchul@google.com>"
+
+RUN apt-get update -y && \
+  apt-get install -y bpfcc-tools vim && \
+  apt-get clean autoclean && \
+  rm -rf /var/lib/apt/lists/*
+
+CMD ["/bin/bash"]
