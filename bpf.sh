@@ -3,7 +3,7 @@
 source /etc/os-release
 
 if [ "$ID" = "debian" ] || [ "$ID" = "ubuntu" ]; then
-    sudo apt-get install -y linux-headers-$(uname -r)
+    [ ! -d /usr/src/linux-headers-$(uname -r) ] && sudo apt-get install -y linux-headers-$(uname -r)
 
     sudo docker run --rm -it \
         -v /usr/src:/usr/src:ro \
