@@ -1,9 +1,30 @@
-FROM quay.io/iovisor/bpftrace:latest
+FROM ubuntu:focal
+LABEL maintainer="Jason Kim <junchul@google.com>"
+
+RUN apt-get update -y
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
+     libbpfcc-dev git cmake bison flex python clang libclang-dev libelf-dev  \
+     libluajit-5.1-dev zlib1g-dev linux-headers-$(uname -r) python3-distutils
+RUN git clone https://github.com/iovisor/bpftrace /tmp/src/bpftrace
+RUN mkdir /tmp/src/bpftrace/build
+WORKDIR /tmp/src/bpftrace/build
+RUN cmake -DCMAKE_BUILD_TYPE=Release ..
+RUN make -j8
+RUN make install
+
+FROM ubuntu:focal
 LABEL maintainer="Jason Kim <junchul@google.com>"
 
 RUN apt-get update -y && \
-  apt-get install -y bpfcc-tools vim && \
+  apt-get install -y bpfcc-tools libclang1-10 vim && \
   apt-get clean autoclean && \
   rm -rf /var/lib/apt/lists/*
+
+COPY --from=0 /usr/local/bin/bpftrace /usr/local/bin/
+COPY --from=0 /usr/local/share/bpftrace /usr/local/share/bpftrace
+COPY --from=0 /usr/local/share/man/man8/* /usr/local/share/man/man8/
+RUN chmod 0755 /usr/local/share/bpftrace/tools/*.bt 
+
+ENV PATH /usr/local/share/bpftrace/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 CMD ["/bin/bash"]
